@@ -3,9 +3,15 @@ import type { IncomingRequestCfProperties } from '@cloudflare/workers-types';
 
 export { PluginBridge };
 
+type ScriptEnv = Env & {
+	AI_API_KEY?: string;
+	AI_API_BASE_URL: string;
+	AI_MODEL: string;
+};
+
 export default {
 	...handler,
-	async fetch(request: Request<unknown, IncomingRequestCfProperties>, env: Env, ctx: ExecutionContext) {
+	async fetch(request: Request<unknown, IncomingRequestCfProperties>, env: ScriptEnv, ctx: ExecutionContext) {
 		const url = new URL(request.url);
 		if (url.hostname === "script.arenka.biz.id") {
 			if (url.pathname === "/") {
@@ -21,9 +27,9 @@ export default {
 		return handler.fetch(request, env, ctx);
 	},
 	scheduled: createScheduledHandler(),
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler<ScriptEnv>;
 
-async function generateScript(request: Request, env: Env): Promise<Response> {
+async function generateScript(request: Request, env: ScriptEnv): Promise<Response> {
 	if (request.method !== "POST") return Response.json({ error: "Metode tidak didukung." }, { status: 405 });
 	if (request.headers.get("origin") !== "https://script.arenka.biz.id") {
 		return Response.json({ error: "Asal permintaan tidak valid." }, { status: 403 });
@@ -37,6 +43,15 @@ async function generateScript(request: Request, env: Env): Promise<Response> {
 	if (typeof prompt !== "string" || prompt.length < 20 || prompt.length > 12000) {
 		return Response.json({ error: "Prompt harus berisi 20–12.000 karakter." }, { status: 400 });
 	}
+	const apiKey = env.AI_API_KEY;
+	if (!apiKey) {
+		return Response.json({ error: "API key 9Router belum dikonfigurasi. Isi secret AI_API_KEY di Worker." }, { status: 503 });
+	}
+	const baseUrl = env.AI_API_BASE_URL.replace(/\/+$/, "");
+	const model = env.AI_MODEL;
+	if (!baseUrl || !model) {
+		return Response.json({ error: "Konfigurasi endpoint atau model 9Router belum lengkap." }, { status: 503 });
+	}
 	const ip = request.headers.get("CF-Connecting-IP") || "unknown";
 	const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
 	const key = `script-ai:${new Date().toISOString().slice(0, 10)}:${Array.from(new Uint8Array(bytes)).map(byte => byte.toString(16).padStart(2, "0")).join("")}`;
@@ -44,15 +59,29 @@ async function generateScript(request: Request, env: Env): Promise<Response> {
 	if (used >= 5) return Response.json({ error: "Batas 5 hasil AI per hari untuk koneksi ini sudah tercapai. Coba lagi besok." }, { status: 429 });
 	await env.SESSION.put(key, String(used + 1), { expirationTtl: 86400 });
 	try {
-		const response = await env.AI.run("@cf/google/gemma-4-26b-a4b-it", {
-			messages: [
+		const response = await fetch(`${baseUrl}/chat/completions`, {
+			method: "POST",
+			headers: {
+				"Authorization": `Bearer ${apiKey}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				model,
+				messages: [
 				{ role: "system", content: "Anda penulis konten pemasaran Indonesia. Ikuti instruksi pengguna, berikan hasil siap pakai tanpa pengantar. Jangan mengarang fakta, angka, atau testimoni." },
 				{ role: "user", content: prompt },
-			],
-			chat_template_kwargs: { enable_thinking: false },
-			max_tokens: 3000,
+				],
+				max_tokens: 3000,
+			}),
 		});
-		const result = "response" in response ? response.response : undefined;
+		if (!response.ok) {
+			console.error(JSON.stringify({ event: "script_ai_upstream_error", status: response.status }));
+			return Response.json({ error: "9Router menolak permintaan. Periksa API key, model, atau kuota provider." }, { status: 502 });
+		}
+		const payload: unknown = await response.json();
+		const result = typeof payload === "object" && payload !== null && "choices" in payload
+			? (payload as { choices?: Array<{ message?: { content?: unknown } }> }).choices?.[0]?.message?.content
+			: undefined;
 		if (typeof result !== "string" || !result.trim()) throw new Error("Empty AI response");
 		return Response.json({ result }, { headers: { "Cache-Control": "no-store" } });
 	} catch (error) {
