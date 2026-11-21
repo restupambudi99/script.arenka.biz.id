@@ -18,31 +18,24 @@ export default function ScriptGenerator(){
  const [active,setActive]=useState(0);
  const [values,setValues]=useState<Record<string,string>>(()=>defaultValues(generators[0]));
  const [prompt,setPrompt]=useState('');
- const [result,setResult]=useState('');
- const [view,setView]=useState<'prompt'|'result'>('prompt');
  const [dark,setDark]=useState(true);
- const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState('');
  const generator=generators[active];
  const allFields=generator.sections.flatMap(section=>section.fields);
- const shown=view==='result'&&result?result:prompt;
- function switchMode(index:number){setActive(index);setValues(defaultValues(generators[index]));setPrompt('');setResult('');setView('prompt');setNotice('');}
+ const shown=prompt;
+ function switchMode(index:number){setActive(index);setValues(defaultValues(generators[index]));setPrompt('');setNotice('');}
  function generatePrompt(){
   const missing=allFields.filter(field=>field.required&&!values[field.id]?.trim());
   if(missing.length){setNotice(`Lengkapi kolom wajib: ${missing.map(field=>field.label).join(', ')}.`);document.getElementById(missing[0].id)?.focus();return;}
   if(active===5&&values.cal_pilar.split(',').map(v=>v.trim()).filter(Boolean).length<3){setNotice('Isi minimal tiga pilar konten, pisahkan dengan koma.');document.getElementById('cal_pilar')?.focus();return;}
-  setPrompt(createPrompt(generator,values));setResult('');setView('prompt');setNotice('Prompt siap. Anda bisa menyalinnya atau membuat hasil dengan AI.');
+  setPrompt(createPrompt(generator,values));setNotice('Prompt siap. Salin atau buka Copywriter GPT untuk menggunakannya.');
  }
- async function generateResult(){
-  if(!prompt||busy)return;
-  setBusy(true);setNotice('AI sedang menyusun hasil...');
-  try{
-   const response=await fetch('/api/script-generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
-   const data=await response.json() as {result?:string;error?:string};
-   if(!response.ok||!data.result)throw new Error(data.error||'AI belum dapat memproses permintaan.');
-   setResult(data.result);setView('result');setNotice('Hasil AI siap.');
-  }catch(error){setNotice(error instanceof Error?error.message:'Gagal membuat hasil AI.');}
-  finally{setBusy(false);}
+ function openCopywriter(){
+  if(!prompt)return;
+  window.open('https://chatgpt.com/g/g-Ji2QOyMml-copywriter-gpt-marketing-branding-ads','_blank','noopener,noreferrer');
+  navigator.clipboard.writeText(prompt)
+   .then(()=>setNotice('Copywriter GPT dibuka. Prompt sudah disalin, tempelkan dengan Ctrl+V.'))
+   .catch(()=>setNotice('Copywriter GPT dibuka. Salin prompt dari panel lalu tempelkan di chat.'));
  }
  async function copy(){
   try{await navigator.clipboard.writeText(shown);setNotice('Teks disalin ke clipboard.');}
@@ -63,12 +56,12 @@ export default function ScriptGenerator(){
       <h2><span>{String(index+1).padStart(2,'0')}</span>{section.title}</h2>
       <div className="sg-fields">{section.fields.map(field=><FieldControl key={field.id} field={field} value={values[field.id]??''} onChange={value=>setValues(prev=>({...prev,[field.id]:value}))}/>)}</div>
      </section>)}
-     <div className="sg-form-actions"><button type="submit" className="sg-primary">▤ &nbsp; Generate Prompt</button><button type="button" className="sg-secondary" onClick={()=>{setValues(defaultValues(generator));setPrompt('');setResult('');setNotice('Form direset.');}}>↺ &nbsp; Reset Form</button></div>
+     <div className="sg-form-actions"><button type="submit" className="sg-primary">▤ &nbsp; Generate Prompt</button><button type="button" className="sg-secondary" onClick={()=>{setValues(defaultValues(generator));setPrompt('');setNotice('Form direset.');}}>↺ &nbsp; Reset Form</button></div>
     </form></div>
     <div className="sg-output-column"><div className="sg-output-card">
-     <div className="sg-output-top"><span className="sg-window-dots"><i/><i/><i/></span><span>{result?<><button type="button" className={view==='prompt'?'sg-tab active':'sg-tab'} onClick={()=>setView('prompt')}>Prompt</button><button type="button" className={view==='result'?'sg-tab active':'sg-tab'} onClick={()=>setView('result')}>Hasil AI</button></>:'AI Prompt Output'}</span><button type="button" className="sg-copy" disabled={!shown} onClick={copy}>COPY</button></div>
-     <div className={`sg-output-text ${shown?'has-content':''}`} role="region" aria-label={view==='result'?'Hasil AI':'Prompt AI'}><pre>{shown||'// Isi form di sebelah kiri untuk generate prompt...'}</pre></div>
-     <div className="sg-output-footer"><button type="button" disabled={!prompt||busy} onClick={generateResult}>{busy?'⏳ Sedang Membuat...':'ϟ  Generate Sekarang'}</button></div>
+      <div className="sg-output-top"><span className="sg-window-dots"><i/><i/><i/></span><span>AI Prompt Output</span><button type="button" className="sg-copy" disabled={!shown} onClick={copy}>COPY</button></div>
+     <div className={`sg-output-text ${shown?'has-content':''}`} role="region" aria-label="Prompt AI"><pre>{shown||'// Isi form di sebelah kiri untuk generate prompt...'}</pre></div>
+     <div className="sg-output-footer"><button type="button" disabled={!prompt} onClick={openCopywriter}>✦ &nbsp; Buka Copywriter GPT</button></div>
     </div></div>
    </div>
   </div>
