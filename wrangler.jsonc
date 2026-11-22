@@ -1,6 +1,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "arenka-emdash",
+	"secrets": { "required": ["GEMINI_API_KEY"] },
 	"main": "./src/worker.ts",
 	"compatibility_date": "2026-02-24",
 	"compatibility_flags": ["nodejs_compat"],
@@ -14,6 +15,7 @@
 			"binding": "DB",
 			"database_name": "arenka-emdash",
 			"database_id": "d77c1fa9-ebd4-4d05-b66e-98b0587fb5c2",
+			"migrations_dir": "migrations/studio",
 		},
 	],
 	"r2_buckets": [

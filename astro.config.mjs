@@ -7,6 +7,9 @@ import emdash from "emdash/astro";
 export default defineConfig({
 	output: "server",
 	adapter: cloudflare(),
+	session: {
+		cookie: { domain: ".arenka.biz.id" },
+	},
 	image: {
 		layout: "constrained",
 		responsiveStyles: true,
