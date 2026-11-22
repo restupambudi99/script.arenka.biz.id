@@ -96,7 +96,17 @@ Gunakan komponen shadcn/ui seperti Tabs, Sheet/Drawer, Dialog, Select, dan Progr
 - Impor naskah tempel dengan pemisahan heading Scene/Adegan/Shot, editor naskah, brief proyek, scene, durasi, aksi, visual, keadaan awal/akhir, dan gambar referensi per scene.
 - Prompt Google Flow dibentuk dari konteks proyek dan data scene, dapat disalin atau diunduh sekaligus.
 - Autosave localStorage pada browser, serta ekspor JSON.
-- Belum ada persistence D1/R2, login proyek, generasi gambar, sinkronisasi perangkat, ataupun dependency Tailwind/shadcn. Lanjutkan sesuai tahapan integrasi sebelum mengaktifkan penggunaan multi-pengguna.
+- Sudah tersedia di produksi: persistence project D1, asset R2 privat, izin EmDash editor, unggahan referensi, dan generation image endpoint Gemini server-side. Migrasi D1 sudah diterapkan. Secret Gemini belum dikonfigurasi sehingga pembuatan gambar belum aktif.
+
+### Integrasi persistence tahap berikutnya
+
+- Tabel `studio_projects` dan `studio_assets` ditambahkan melalui `migrations/studio/0001_storyboard_studio.sql`.
+- API proyek dan aset berada di `src/pages/api/studio/`. Akses dibatasi untuk user EmDash dengan izin `content:edit_any`, diperiksa per pemilik proyek, dan permintaan tulis diverifikasi same-origin.
+- Data proyek disinkronkan ke D1; unggahan JPEG/PNG/WebP sampai 8 MB disimpan di R2 dan dilayani melalui endpoint privat milik user. Data URL gambar lokal tidak dikirim ke D1.
+- Cookie sesi diberi domain `.arenka.biz.id` agar sesi EmDash dari apex dapat dikenali pada subdomain generator.
+- Migrasi D1 `migrations/studio/0001_storyboard_studio.sql` sudah diterapkan ke database produksi Arenkabiz pada 22 November 2026.
+- Pembuatan storyboard still memakai endpoint Gemini server-side dengan model `gemini-nano-banana-2.1`, maksimal dua referensi dari project yang sama, penyimpanan hasil ke R2, dan batas 10 percobaan per user per 24 jam. Endpoint memerlukan `GEMINI_API_KEY`; key belum dikonfigurasi.
+- Pemanggilan API gambar dapat menggunakan kuota berbayar provider. Pastikan plan/billing key sebelum mengaktifkan pembuatan gambar. Video tetap dibuat manual di Google Flow.
 
 Bangun satu alur yang lengkap dahulu: satu proyek UGC 4–6 scene, satu karakter, satu produk, satu lokasi, naskah dari ChatGPT, satu gambar disetujui per scene, prompt Flow, dan ekspor ZIP. Total durasi dan durasi per shot dapat berbeda; tidak perlu memaksa semua shot 15 detik.
 
