@@ -26,7 +26,7 @@
 - The studio keeps local browser storage as an offline fallback; D1 sync requires login and a successful database migration. R2 accepts JPEG/PNG/WebP up to 8 MB, and image reads are private to the owning editor.
 - Gemini still generation is implemented at `src/pages/api/studio/generate-image.ts` using `gemini-nano-banana-2.1`; it uses server-only `GEMINI_API_KEY`, sends up to two project-owned references, stores output in R2, and enforces 10 attempted generations per user per rolling 24 hours.
 - The Google API endpoint/model follows the current Gemini image-generation guide. The user-provided Omni Flash 1.2 is still used manually in Flow for video generation.
-- Add the user's Gemini API key only to ignored local `.env` as `GEMINI_API_KEY=...` for local use. For production, configure it with Wrangler secret put on the Arenkabiz account. Never read, log, or commit secret values. Image generation may consume paid quota.
+- Add the user's Gemini API key only to ignored local `.env` as `GEMINI_API_KEY=...` for local use. For production, configure it with `wrangler secret put GEMINI_API_KEY` on the Arenkabiz account. Never read, log, or commit secret values. The feature remains disabled until configured and image generation may consume paid quota.
 - The Flow video is still created manually by the user. The studio generates storyboard still images and Flow prompts, not video.
 - Preserve Astro + React/EmDash. No Next.js/Tailwind/shadcn migration is required to use this MVP; its current standalone CSS keeps the integration small.
 
