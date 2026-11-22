@@ -46,7 +46,7 @@ export default function ScriptGenerator(){
    <div className="sg-brand"><span className="sg-brand-mark">✦</span><span><b>Content<span>Script</span></b><small>ARENKA.BIZ.ID</small></span></div>
    <div className="sg-sidebar-title">GENERATORS</div>
    <nav aria-label="Jenis generator" className="sg-nav">{generators.map((item,index)=><button key={item.name} type="button" className={active===index?'selected':''} onClick={()=>switchMode(index)} aria-current={active===index?'page':undefined}><span className="sg-nav-icon" aria-hidden="true">{item.icon}</span>{item.name}</button>)}</nav>
-   <div className="sg-sidebar-bottom"><a href="https://arenka.biz.id">← Kembali ke situs</a><small>© 2026 Arenka.biz.id</small></div>
+   <div className="sg-sidebar-bottom"><a href="/studio">✦ &nbsp; Storyboard Studio</a><a href="https://arenka.biz.id">← Kembali ke situs</a><small>© 2026 Arenka.biz.id</small></div>
   </aside>
   <div className="sg-main">
    <header className="sg-header"><h1>{generator.name}</h1><div className="sg-header-actions"><button type="button" onClick={()=>setDark(!dark)} aria-label={dark?'Aktifkan tema terang':'Aktifkan tema gelap'} title="Ganti tema">{dark?'☾':'☀'}</button><a href="https://arenka.biz.id" aria-label="Kembali ke situs" title="Kembali ke situs">↪</a></div></header>

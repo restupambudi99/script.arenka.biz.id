@@ -17,6 +17,15 @@
 - `src/worker.ts`
 - `wrangler.jsonc`
 
+## Storyboard Studio (MVP foundation)
+- Route: `https://script.arenka.biz.id/studio` (`src/pages/studio.astro`)
+- React editor: `src/components/storyboard/StoryboardStudio.tsx` and `storyboard-studio.css`
+- Opened from the Content Script sidebar. It supports project brief, paste/import of ChatGPT script, editable scenes, continuity notes, per-scene image reference, Flow prompt assembly, local autosave, JSON export, and prompt text export.
+- This initial stage stores project data and image data URLs in the current browser's localStorage. It is not synced to D1/R2 or across devices, and it has no image-generation API yet.
+- The Flow video is still created manually by the user. Do not present this MVP as generating images or video with Gemini.
+- Next: make a resilient storage API backed by D1/R2; add authentication/authorization and upload limits; then wire a server-side image provider after the user supplies a Gemini image API credential through a local ignored `.env`/Wrangler secret. Never read, log, or commit secret values.
+- Preserve Astro + React/EmDash. No Next.js/Tailwind/shadcn migration is required to use this MVP; its current standalone CSS keeps the integration small.
+
 ## Before next deploy
 1. Check current branch and worktree.
 2. `npm run typecheck`
