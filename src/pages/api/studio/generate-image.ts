@@ -6,7 +6,7 @@ const MODEL = "cx/gpt-image-2";
 const MAX_IMAGES_PER_DAY = 10;
 const MAX_REFERENCE_BYTES = 6 * 1024 * 1024;
 type Scene = { id: string; title: string; script?: string; action?: string; visual?: string; continuityIn?: string; continuityOut?: string; image?: string; referenceImage?: string };
-type Project = { id: string; title: string; brief?: string; ratio?: string; scenes: Scene[] };
+type Project = { id: string; title: string; brief?: string; ratio?: string; character?: string; product?: string; scenes: Scene[] };
 
 function assetIdFromUrl(value?: string) {
 	const match = value?.match(/^\/api\/studio\/assets\/([0-9a-f-]{36})$/i);
@@ -59,6 +59,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const prompt = [
 		`Create one realistic storyboard still for a ${project.ratio || "9:16"}-aspect video scene.`,
 		`Project: ${project.title}. ${project.brief || ""}`,
+		project.character && `Character identity lock: ${project.character}`,
+		project.product && `Product and visual style lock: ${project.product}`,
 		`Scene: ${scene.title}.`,
 		scene.script && `Dialogue or narration: ${scene.script}`,
 		scene.action && `Main action: ${scene.action}`,
