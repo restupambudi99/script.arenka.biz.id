@@ -6,7 +6,7 @@ const MODEL = "cx/gpt-image-2";
 const MAX_IMAGES_PER_DAY = 10;
 const MAX_REFERENCE_BYTES = 6 * 1024 * 1024;
 type Scene = { id: string; title: string; script?: string; action?: string; visual?: string; continuityIn?: string; continuityOut?: string; image?: string; referenceImage?: string };
-type Project = { id: string; title: string; brief?: string; ratio?: string; character?: string; product?: string; scenes: Scene[] };
+type Project = { id: string; title: string; brief?: string; ratio?: string; character?: string; product?: string; characterImage?: string; productImage?: string; scenes: Scene[] };
 
 function assetIdFromUrl(value?: string) {
 	const match = value?.match(/^\/api\/studio\/assets\/([0-9a-f-]{36})$/i);
@@ -70,7 +70,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		"Create a single clear moment with natural human anatomy and believable product details. Preserve identity, clothing, setting, and product shown in supplied references. Do not add lettering, captions, watermarks, or invented logos."
 	].filter(Boolean).join("\n\n");
 	const referenceImages: Array<{ bytes: Uint8Array; mimeType: string }> = [];
-	for (const url of [...new Set([scene.referenceImage, sceneIndex > 0 ? project.scenes[sceneIndex - 1]?.image : undefined].filter((value): value is string => Boolean(value)))].slice(0, 2)) {
+	for (const url of [...new Set([project.characterImage, project.productImage, scene.referenceImage, sceneIndex > 0 ? project.scenes[sceneIndex - 1]?.image : undefined].filter((value): value is string => Boolean(value)))].slice(0, 2)) {
 		const id = assetIdFromUrl(url);
 		if (!id) continue;
 		const asset = await db.prepare("SELECT object_key, content_type, byte_size FROM studio_assets WHERE id = ? AND project_id = ? AND owner_id = ?")
